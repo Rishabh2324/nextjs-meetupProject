@@ -18,9 +18,12 @@ const HomePage = ({ meetUps }) => {
 };
 
 export const getStaticProps = async () => {
-  const response = await fetch(`${process.env.HOSTNAME}/api/meetup`, {
-    method: 'GET',
-  });
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_VERCEL_URL}/api/meetup`,
+    {
+      method: 'GET',
+    }
+  );
   const data = await response.json();
   let meetUps = [];
   if (data.status === 200) {
