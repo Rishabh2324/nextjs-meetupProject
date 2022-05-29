@@ -18,7 +18,7 @@ const HomePage = ({ meetUps }) => {
 };
 
 export const getStaticProps = async () => {
-  const response = await fetch(`http://localhost:3000/api/meetup`, {
+  const response = await fetch(`${process.env.HOSTNAME}/api/meetup`, {
     method: 'GET',
   });
   const data = await response.json();
