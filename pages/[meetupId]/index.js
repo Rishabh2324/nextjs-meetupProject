@@ -1,5 +1,8 @@
 import React from 'react';
 import Head from 'next/head';
+
+import { MongoClient, ObjectId } from 'mongodb';
+
 import MeetUpDetail from '../../components/meetups/MeetUpDetail';
 
 const MeetUpId = ({ meetUp }) => {
@@ -20,30 +23,52 @@ const MeetUpId = ({ meetUp }) => {
 };
 
 export async function getStaticPaths() {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_VERCEL_URL}/api/meetup`,
+  const client = new MongoClient(
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wazyz.gcp.mongodb.net/?retryWrites=true&w=majority`,
     {
-      method: 'GET',
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     }
   );
-  const data = await response.json();
+  await client.connect();
+  const db = client.db(process.env.DB_NAME);
+  const collection = db.collection(process.env.DB_COLLECTION);
+  const meetups = await collection.find({}).toArray();
+  const data = meetups.map((meetup) => ({
+    params: { meetupId: meetup._id.toString() },
+  }));
   return {
-    paths: data?.body?.map((meetup) => ({
-      params: { meetupId: meetup._id.toString() },
-    })),
     fallback: false,
+    paths: data,
   };
 }
 
 export async function getStaticProps({ params }) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_VERCEL_URL}/api/${params.meetupId}`,
+  const client = new MongoClient(
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wazyz.gcp.mongodb.net/?retryWrites=true&w=majority`,
     {
-      method: 'GET',
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     }
   );
-  const data = await response.json();
-  return { props: { meetUp: data?.body } };
+  await client.connect();
+  const db = client.db(process.env.DB_NAME);
+  const collection = db.collection(process.env.DB_COLLECTION);
+  const myId = new ObjectId(params.meetupId);
+  const response = await collection.findOne({
+    _id: myId,
+  });
+  return {
+    props: {
+      meetUp: {
+        id: response._id.toString(),
+        title: response.title,
+        image: response.image,
+        address: response.address,
+        description: response.description,
+      },
+    },
+  };
 }
 
 export default MeetUpId;
