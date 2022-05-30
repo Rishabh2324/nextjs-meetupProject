@@ -1,5 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
+import { MongoClient } from 'mongodb';
 import MeetupList from '../components/meetups/MeetupList';
 
 const HomePage = ({ meetUps }) => {
@@ -18,23 +19,24 @@ const HomePage = ({ meetUps }) => {
 };
 
 export const getStaticProps = async () => {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_VERCEL_URL}/api/meetup`,
+  const client = new MongoClient(
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wazyz.gcp.mongodb.net/?retryWrites=true&w=majority`,
     {
-      method: 'GET',
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     }
   );
-  const data = await response.json();
-  let meetUps = [];
-  if (data.status === 200) {
-    meetUps = data?.body?.map((meetup) => ({
-      id: meetup._id.toString(),
-      title: meetup.title,
-      address: meetup.address,
-      image: meetup.image,
-      description: meetup.description,
-    }));
-  }
+  await client.connect();
+  const db = client.db(process.env.DB_NAME);
+  const collection = db.collection(process.env.DB_COLLECTION);
+  const data = await collection.find({}).toArray();
+  const meetUps = data?.map((meetup) => ({
+    id: meetup._id.toString(),
+    title: meetup.title,
+    address: meetup.address,
+    image: meetup.image,
+    description: meetup.description,
+  }));
   return {
     props: {
       meetUps: meetUps,
